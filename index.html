@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สร้างใบงานภาคสนาม (1 ใบงาน = หลายจุดงาน)</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 14px; }
+    .wrap { max-width: 860px; margin: 0 auto; }
+    .topbar {
+      background: #0f4c81;
+      color: #fff;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .topbar h1 { margin: 0; font-size: 1.1rem; }
+    .topbar small { opacity: 0.92; display: block; margin-top: 4px; font-size: 0.8rem; }
+    .card {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    @media (max-width: 720px) {
+      .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+    label { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px; }
+    input, select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #fff;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.86rem; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+    th { background: #f8fafc; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary { background: #0f4c81; color: #fff; }
+    .btn-success { background: #15803d; color: #fff; }
+    .btn-sec { background: #e2e8f0; color: #0f172a; }
+    .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+    .btn-del { background: #fee2e2; color: #991b1b; padding: 5px 9px; font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1>ระบบสร้างใบงานภาคสนาม (1 ใบงาน = หลายจุดงาน)</h1>
+      <small>กดสร้างใบงาน 1 ครั้ง ระบบจะสร้างไฟล์ .html ที่มีข้อมูลใบงานและจุดงานทั้งหมดฝังในตัว แล้วดาวน์โหลดเก็บลงเครื่องผู้รับจ้างทันที</small>
+    </div>
+
+    <div class="card">
+      <div class="grid-3">
+        <div>
+          <label for="jobId">รหัสใบงาน *</label>
+          <input id="jobId" value="JOB-2026-001" required />
+        </div>
+        <div>
+          <label for="jobTitle">ชื่องาน / พื้นที่ *</label>
+          <input id="jobTitle" value="บำรุงรักษาเครื่องวัดในตู้ภาคสนาม DMA-01" required />
+        </div>
+        <div>
+          <label for="templateVersion">เวอร์ชันแบบฟอร์ม</label>
+          <input id="templateVersion" value="v1.0" />
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:14px 0;" />
+
+      <strong>รายการจุดงานในใบงานนี้ (<span id="siteCount">0</span> จุด)</strong>
+      <div class="grid-4" style="margin-top:8px;">
+        <div>
+          <label for="newCabinet">รหัสตู้ภาคสนาม</label>
+          <input id="newCabinet" placeholder="เช่น CAB-DMA01-006" />
+        </div>
+        <div>
+          <label for="newMeter">รหัสเครื่องวัด</label>
+          <input id="newMeter" placeholder="เช่น MTR-2026-106" />
+        </div>
+        <div>
+          <label for="newWorkType">ประเภทงาน</label>
+          <select id="newWorkType">
+            <option value="PM">PM - ตรวจเช็กตามรอบ</option>
+            <option value="CM">CM - แก้ไขขัดข้อง</option>
+            <option value="CAL_REP">สอบเทียบ / เปลี่ยนเครื่องวัด</option>
+          </select>
+        </div>
+        <div>
+          <label for="newNote">คำอธิบายจุดงาน</label>
+          <input id="newNote" placeholder="เช่น หน้าโรงกรองน้ำ / ปากซอย" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-sec" id="btnAddSite">+ เพิ่มจุดงาน</button>
+        <button type="button" class="btn-sec" id="btnReset5Sample">รีเซ็ตเป็นตัวอย่าง 5 จุดงาน</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>รหัสตู้</th>
+            <th>รหัสเครื่องวัด</th>
+            <th>ประเภทงาน</th>
+            <th>คำอธิบายจุดงาน</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="siteTableBody"></tbody>
+      </table>
+
+      <div class="actions" style="margin-top:16px;">
+        <button type="button" class="btn-success" id="btnCreateJobHtml">สร้างใบงาน (ดาวน์โหลดไฟล์ .html ลงเครื่องผู้รับจ้าง)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SAMPLE_5_SITES = [
+      { cabinetId: 'CAB-DMA01-001', meterId: 'MTR-2026-101', workType: 'PM', note: 'จุดที่ 1 - บริเวณปากซอยหลัก' },
+      { cabinetId: 'CAB-DMA01-002', meterId: 'MTR-2026-102', workType: 'PM', note: 'จุดที่ 2 - ข้างสถานีสูบย่อย' },
+      { cabinetId: 'CAB-DMA01-003', meterId: 'MTR-2026-103', workType: 'CM', note: 'จุดที่ 3 - ตรวจเช็กสัญญาณ/ค่าอ่าน' },
+      { cabinetId: 'CAB-DMA01-004', meterId: 'MTR-2026-104', workType: 'PM', note: 'จุดที่ 4 - แยกถนนสายรอง' },
+      { cabinetId: 'CAB-DMA01-005', meterId: 'MTR-2026-105', workType: 'CAL_REP', note: 'จุดที่ 5 - จุดปลายโซน DMA' }
+    ];
+
+    let sites = SAMPLE_5_SITES.map((x) => ({ ...x }));
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function safeSlug(s) {
+      return String(s || 'JOB').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    }
+
+    function renderSites() {
+      document.getElementById('siteCount').textContent = sites.length;
+      const tbody = document.getElementById('siteTableBody');
+      if (!sites.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b;">ยังไม่มีจุดงานในใบงานนี้</td></tr>';
+        return;
+      }
+      tbody.innerHTML = sites.map((s, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${escapeHtml(s.cabinetId)}</td>
+          <td>${escapeHtml(s.meterId)}</td>
+          <td>${escapeHtml(s.workType)}</td>
+          <td>${escapeHtml(s.note)}</td>
+          <td><button type="button" class="btn-del" onclick="removeSite(${idx})">ลบ</button></td>
+        </tr>
+      `).join('');
+    }
+
+    window.removeSite = (idx) => {
+      sites.splice(idx, 1);
+      renderSites();
+    };
+
+    document.getElementById('btnAddSite').addEventListener('click', () => {
+      const cabinetId = document.getElementById('newCabinet').value.trim();
+      const meterId = document.getElementById('newMeter').value.trim();
+      const workType = document.getElementById('newWorkType').value;
+      const note = document.getElementById('newNote').value.trim();
+      if (!cabinetId || !meterId) return alert('กรุณากรอกรหัสตู้ภาคสนามและรหัสเครื่องวัด');
+      sites.push({ cabinetId, meterId, workType, note });
+      document.getElementById('newCabinet').value = '';
+      document.getElementById('newMeter').value = '';
+      document.getElementById('newNote').value = '';
+      renderSites();
+    });
+
+    document.getElementById('btnReset5Sample').addEventListener('click', () => {
+      sites = SAMPLE_5_SITES.map((x) => ({ ...x }));
+      renderSites();
+    });
+
+    // สร้างไฟล์ HTML ของใบงานที่ฝังข้อมูลใบงาน + จุดงานทั้งหมดไว้ในตัว
+    function generateJobWorkerHtml(jobData) {
+      const embeddedJson = JSON.stringify(jobData).replace(/</g, '\\u003c');
+
+      return `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ใบงาน: ${escapeHtml(jobData.jobId)}</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 12px; }
+    .box { max-width: 720px; margin: 0 auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; }
+    h1 { margin: 0 0 4px; font-size: 1.08rem; color: #0f4c81; }
+    .sub { font-size: 0.82rem; color: #64748b; margin-bottom: 12px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin: 10px 0 4px; }
+    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background: #fff; }
+    textarea { min-height: 76px; }
+    .site-note { font-size: 0.82rem; color: #475569; background: #f8fafc; padding: 8px 10px; border-radius: 8px; margin-top: 6px; border: 1px solid #e2e8f0; }
+    .gps { background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 8px; padding: 8px 10px; font-size: 0.84rem; margin-top: 6px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    button { border: none; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .btn-main { background: #0f4c81; color: #fff; }
+    .btn-sec { background: #e2e8f0; color: #0f172a; }
+    .prev { width: 100%; max-height: 170px; object-fit: cover; border-radius: 8px; margin-top: 8px; display: none; border: 1px solid #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1 id="hdrTitle">ใบงานภาคสนาม</h1>
+    <div class="sub" id="hdrMeta"></div>
+
+    <form id="workerForm">
+      <label>เลือกจุดงานในใบงานนี้ *</label>
+      <select id="sitePicker" required></select>
+      <div class="site-note" id="siteDetailBox">-</div>
+
+      <label>ถ่ายรูปจุดงาน (หรือเลือกรูปที่มีในเครื่อง) *</label>
+      <input id="camInput" type="file" accept="image/*" capture="environment" style="display:none;" />
+      <input id="galInput" type="file" accept="image/*" style="display:none;" />
+      <div class="row">
+        <button type="button" class="btn-sec" onclick="document.getElementById('camInput').click()">ถ่ายรูป</button>
+        <button type="button" class="btn-sec" onclick="document.getElementById('galInput').click()">เลือกรูป</button>
+      </div>
+      <div id="photoStatus" style="font-size:0.8rem;color:#64748b;margin-top:4px;">ยังไม่ได้เลือกรูปภาพ</div>
+      <img id="photoPreview" class="prev" alt="ตัวอย่างรูปภาพจุดงาน" />
+
+      <label>บันทึกผลการปฏิบัติงาน *</label>
+      <textarea id="resultText" required placeholder="ระบุผลการตรวจเช็ก อาการ หรือสิ่งที่ดำเนินการ"></textarea>
+
+      <label>พิกัดทำงาน</label>
+      <div class="gps" id="gpsInfo">กำลังดึงพิกัด GPS...</div>
+      <div class="row">
+        <button type="button" class="btn-sec" id="btnRefreshGps">รีเฟรชพิกัด</button>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <button type="submit" class="btn-main">บันทึกจุดงานและเซฟเป็นไฟล์ .json</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const JOB_DATA = ${embeddedJson};
+    document.getElementById('hdrTitle').textContent = JOB_DATA.jobId + ' — ' + JOB_DATA.title;
+    document.getElementById('hdrMeta').textContent = 'รหัสใบงาน: ' + JOB_DATA.jobId + ' | เวอร์ชัน: ' + JOB_DATA.templateVersion + ' | จำนวนจุดงาน: ' + (JOB_DATA.sites || []).length + ' จุด';
+
+    const picker = document.getElementById('sitePicker');
+    const detailBox = document.getElementById('siteDetailBox');
+
+    (JOB_DATA.sites || []).forEach((s, i) => {
+      const op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = \`จุดที่ \${i + 1}: \${s.cabinetId} / \${s.meterId} (\${s.workType})\`;
+      picker.appendChild(op);
+    });
+
+    function updateSiteDetail() {
+      const s = (JOB_DATA.sites || [])[Number(picker.value)];
+      if (!s) return;
+      detailBox.textContent = \`ตู้: \${s.cabinetId} | เครื่องวัด: \${s.meterId} | ประเภทงาน: \${s.workType}\${s.note ? ' | ' + s.note : ''}\`;
+    }
+    picker.addEventListener('change', updateSiteDetail);
+    updateSiteDetail();
+
+    let currentGps = null;
+    let photoBase64 = '';
+    let photoSource = '';
+
+    function fetchGps() {
+      const el = document.getElementById('gpsInfo');
+      if (!navigator.geolocation) { el.textContent = 'อุปกรณ์ไม่รองรับ GPS'; return; }
+      el.textContent = 'กำลังดึงพิกัด...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentGps = {
+            lat: Number(pos.coords.latitude.toFixed(6)),
+            lng: Number(pos.coords.longitude.toFixed(6)),
+            accuracyM: Math.round(pos.coords.accuracy),
+            capturedAt: new Date().toISOString()
+          };
+          el.textContent = \`Lat: \${currentGps.lat}, Lng: \${currentGps.lng} (±\${currentGps.accuracyM} m)\`;
+        },
+        (err) => { el.textContent = 'ดึงพิกัดไม่ได้: ' + err.message; },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+    document.getElementById('btnRefreshGps').addEventListener('click', fetchGps);
+
+    function fileToCompressedBase64(file, maxW = 1200, q = 0.78) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let { width, height } = img;
+          if (width > maxW) { height = Math.round((height * maxW) / width); width = maxW; }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', q));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('อ่านรูปไม่ได้')); };
+        img.src = url;
+      });
+    }
+
+    async function handlePhoto(file, src) {
+      if (!file) return;
+      photoBase64 = await fileToCompressedBase64(file);
+      photoSource = src;
+      const img = document.getElementById('photoPreview');
+      img.src = photoBase64;
+      img.style.display = 'block';
+      document.getElementById('photoStatus').textContent = 'แนบรูปแล้ว (' + src + ')';
+    }
+
+    document.getElementById('camInput').addEventListener('change', (e) => handlePhoto(e.target.files[0], 'CAMERA'));
+    document.getElementById('galInput').addEventListener('change', (e) => handlePhoto(e.target.files[0], 'GALLERY'));
+
+    document.getElementById('workerForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!photoBase64) return alert('กรุณาถ่ายรูปหรือเลือกรูปภาพก่อนบันทึก');
+
+      const site = (JOB_DATA.sites || [])[Number(picker.value)] || {};
+      const now = new Date();
+      const output = {
+        jobId: JOB_DATA.jobId,
+        jobTitle: JOB_DATA.title,
+        templateVersion: JOB_DATA.templateVersion,
+        site,
+        result: document.getElementById('resultText').value.trim(),
+        gps: currentGps,
+        photoSource,
+        photoDataUrl: photoBase64,
+        savedAt: now.toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+      const safeJob = String(JOB_DATA.jobId || 'JOB').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeCab = String(site.cabinetId || 'SITE').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = \`\${safeJob}_\${safeCab}_\${now.getTime()}.json\`;
+
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      alert('บันทึกและดาวน์โหลดไฟล์ ' + fileName + ' ลงเครื่องแล้ว');
+    });
+
+    fetchGps();
+  <\/script>
+</body>
+</html>`;
+    }
+
+    document.getElementById('btnCreateJobHtml').addEventListener('click', () => {
+      const jobId = document.getElementById('jobId').value.trim();
+      const title = document.getElementById('jobTitle').value.trim();
+      const templateVersion = document.getElementById('templateVersion').value.trim() || 'v1.0';
+      if (!jobId || !title) return alert('กรุณากรอกรหัสใบงานและชื่องาน');
+      if (!sites.length) return alert('ต้องมีจุดงานอย่างน้อย 1 จุดในใบงาน');
+
+      const jobData = {
+        jobId,
+        title,
+        templateVersion,
+        createdAt: new Date().toISOString(),
+        sites
+      };
+
+      const htmlStr = generateJobWorkerHtml(jobData);
+      const blob = new Blob([htmlStr], { type: 'text/html;charset=utf-8;' });
+      const fileName = `${safeSlug(jobId)}.html`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    });
+
+    renderSites();
+  </script>
+</body>
+</html>

@@ -3,207 +3,590 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>สร้างใบงานภาคสนาม (1 ใบงาน = หลายจุดงาน)</title>
+  <title>Job Creator — นำเข้าจุดงาน จัดแพ็กใบงาน และรับงานตามสัญญา</title>
   <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --primary: #0f4c81;
+      --primary-hover: #09355c;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --ok: #15803d;
+      --warn: #b45309;
+      --danger: #b91c1c;
+    }
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 14px; }
-    .wrap { max-width: 860px; margin: 0 auto; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 12px; }
+    .app { max-width: 1040px; margin: 0 auto; }
     .topbar {
-      background: #0f4c81;
+      background: var(--primary);
       color: #fff;
       padding: 14px 16px;
       border-radius: 12px;
       margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     .topbar h1 { margin: 0; font-size: 1.1rem; }
-    .topbar small { opacity: 0.92; display: block; margin-top: 4px; font-size: 0.8rem; }
-    .card {
+    .topbar small { opacity: 0.92; display: block; margin-top: 3px; font-size: 0.78rem; }
+    .ver-pill {
+      background: rgba(255,255,255,0.18);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      border: 1px solid var(--border);
       background: #fff;
-      border: 1px solid #cbd5e1;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 14px;
       margin-bottom: 12px;
     }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    @media (max-width: 720px) {
-      .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 780px) {
+      .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
     }
     label { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px; }
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 9px 10px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 0.9rem;
       background: #fff;
     }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.86rem; }
-    th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-    th { background: #f8fafc; }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    textarea { min-height: 70px; resize: vertical; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
     button {
       border: none;
       border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.9rem;
+      padding: 9px 13px;
+      font-size: 0.86rem;
       font-weight: 600;
       cursor: pointer;
     }
-    .btn-primary { background: #0f4c81; color: #fff; }
-    .btn-success { background: #15803d; color: #fff; }
-    .btn-sec { background: #e2e8f0; color: #0f172a; }
-    .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
-    .btn-del { background: #fee2e2; color: #991b1b; padding: 5px 9px; font-size: 0.78rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ok { background: var(--ok); color: #fff; }
+    .btn-sec { background: #e2e8f0; color: var(--text); }
+    .btn-warn { background: #fef3c7; color: #92400e; }
+    .btn-del { background: #fee2e2; color: var(--danger); padding: 5px 9px; font-size: 0.78rem; }
+    .table-wrap { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th, td { border: 1px solid var(--border); padding: 7px 8px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; white-space: nowrap; }
+    .badge { padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+    .b-wait { background: #fef3c7; color: #92400e; }
+    .b-packed { background: #dbeafe; color: #1e40af; }
+    .b-ok { background: #dcfce7; color: #166534; }
+    .b-err { background: #fee2e2; color: #991b1b; }
+    .alert-box {
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.84rem;
+      margin-bottom: 12px;
+    }
+    .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+    .alert-warn { background: #fffbeb; border: 1px solid #fcd34d; color: #78350f; }
+    .alert-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="app">
     <div class="topbar">
-      <h1>ระบบสร้างใบงานภาคสนาม (1 ใบงาน = หลายจุดงาน)</h1>
-      <small>กดสร้างใบงาน 1 ครั้ง ระบบจะสร้างไฟล์ .html ที่มีข้อมูลใบงานและจุดงานทั้งหมดฝังในตัว แล้วดาวน์โหลดเก็บลงเครื่องผู้รับจ้างทันที</small>
+      <div>
+        <h1>ระบบบริหารจุดงานรอตรวจสอบและออกใบงานภาคสนาม</h1>
+        <small>แยกการทำงาน 3 แท็บ: 1) นำเข้าจุดงานรอตรวจสอบ | 2) จัดแพ็กจุดงาน & ระบุสัญญา | 3) ผู้รับจ้างรับงานตามสัญญา</small>
+      </div>
+      <div class="ver-pill" id="latestClientBadge">Client ล่าสุด: v2.0</div>
     </div>
 
-    <div class="card">
-      <div class="grid-3">
-        <div>
-          <label for="jobId">รหัสใบงาน *</label>
-          <input id="jobId" value="JOB-2026-001" required />
-        </div>
-        <div>
-          <label for="jobTitle">ชื่องาน / พื้นที่ *</label>
-          <input id="jobTitle" value="บำรุงรักษาเครื่องวัดในตู้ภาคสนาม DMA-01" required />
-        </div>
-        <div>
-          <label for="templateVersion">เวอร์ชันแบบฟอร์ม</label>
-          <input id="templateVersion" value="v1.0" />
-        </div>
-      </div>
-
-      <hr style="border:none;border-top:1px solid #e2e8f0;margin:14px 0;" />
-
-      <strong>รายการจุดงานในใบงานนี้ (<span id="siteCount">0</span> จุด)</strong>
-      <div class="grid-4" style="margin-top:8px;">
-        <div>
-          <label for="newCabinet">รหัสตู้ภาคสนาม</label>
-          <input id="newCabinet" placeholder="เช่น CAB-DMA01-006" />
-        </div>
-        <div>
-          <label for="newMeter">รหัสเครื่องวัด</label>
-          <input id="newMeter" placeholder="เช่น MTR-2026-106" />
-        </div>
-        <div>
-          <label for="newWorkType">ประเภทงาน</label>
-          <select id="newWorkType">
-            <option value="PM">PM - ตรวจเช็กตามรอบ</option>
-            <option value="CM">CM - แก้ไขขัดข้อง</option>
-            <option value="CAL_REP">สอบเทียบ / เปลี่ยนเครื่องวัด</option>
-          </select>
-        </div>
-        <div>
-          <label for="newNote">คำอธิบายจุดงาน</label>
-          <input id="newNote" placeholder="เช่น หน้าโรงกรองน้ำ / ปากซอย" />
-        </div>
-      </div>
-
-      <div class="actions">
-        <button type="button" class="btn-sec" id="btnAddSite">+ เพิ่มจุดงาน</button>
-        <button type="button" class="btn-sec" id="btnReset5Sample">รีเซ็ตเป็นตัวอย่าง 5 จุดงาน</button>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>รหัสตู้</th>
-            <th>รหัสเครื่องวัด</th>
-            <th>ประเภทงาน</th>
-            <th>คำอธิบายจุดงาน</th>
-            <th>จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="siteTableBody"></tbody>
-      </table>
-
-      <div class="actions" style="margin-top:16px;">
-        <button type="button" class="btn-success" id="btnCreateJobHtml">สร้างใบงาน (ดาวน์โหลดไฟล์ .html ลงเครื่องผู้รับจ้าง)</button>
-      </div>
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-tab="tab1">1. นำเข้าจุดงานรอตรวจสอบ</button>
+      <button type="button" class="tab-btn" data-tab="tab2">2. รายการจุดงานรอจัดแพ็ก (<span id="tab2Count">0</span>)</button>
+      <button type="button" class="tab-btn" data-tab="tab3">3. หน้ารับงานตามสัญญา (<span id="tab3Count">0</span>)</button>
     </div>
+
+    <!-- ==================== แท็บ 1: นำเข้าจุดงานรอตรวจสอบ ==================== -->
+    <section id="tab1" class="tab-panel active">
+      <div class="card">
+        <strong>เพิ่มจุดงานรอตรวจสอบทีละจุด</strong>
+        <form id="singlePointForm" style="margin-top:10px;">
+          <div class="grid-4">
+            <div>
+              <label for="inpDm">DM *</label>
+              <input id="inpDm" required placeholder="เช่น DM-01" />
+            </div>
+            <div>
+              <label for="inpPlace">ชื่อสถานที่ *</label>
+              <input id="inpPlace" required placeholder="เช่น หน้าโรงกรองน้ำ / ปากซอยงามวงศ์วาน 25" />
+            </div>
+            <div>
+              <label for="inpCoord">พิกัด (Lat, Lng) *</label>
+              <input id="inpCoord" required placeholder="เช่น 13.855123, 100.543210" />
+            </div>
+            <div>
+              <label for="inpIssue">สภาพปัญหา *</label>
+              <input id="inpIssue" required placeholder="เช่น ค่าเครื่องวัดไม่ส่ง / ฝาตู้ชำรุด" />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn-primary">+ เพิ่มจุดงานเข้ารายการ</button>
+            <button type="button" class="btn-sec" id="btnGen30">โหลดข้อมูลตัวอย่าง 30 จุดงาน</button>
+            <button type="button" class="btn-del" id="btnClearAllPoints">ล้างจุดงานทั้งหมด</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <strong>นำเข้าหลายจุดพร้อมกันด้วย CSV (คอลัมน์: dm, place, coord, issue)</strong>
+        <div class="meta" style="margin-top:4px;">ตัวอย่างบรรทัด: <code>DM-01,หน้าหมู่บ้าน,13.8501,100.5401,เครื่องวัดค้าง</code></div>
+        <textarea id="csvImportBox" style="margin-top:8px;" placeholder="วางข้อมูล CSV ทีละบรรทัด หรือเลือกไฟล์ .csv ด้านล่าง"></textarea>
+        <div class="actions">
+          <button type="button" class="btn-ok" id="btnImportCsvText">นำเข้าข้อมูลจากข้อความ CSV</button>
+          <label class="btn-sec" style="margin:0;cursor:pointer;">
+            เลือกไฟล์ .csv
+            <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none;" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== แท็บ 2: แสดงรายการจุดงานรอจัดแพ็ก ==================== -->
+    <section id="tab2" class="tab-panel">
+      <div class="card">
+        <div class="grid-3">
+          <div>
+            <label for="contractNameInput">ชื่อสัญญาเข้าตรวจสอบ *</label>
+            <input id="contractNameInput" placeholder="เช่น สัญญาจ้างบำรุงรักษา DMA พื้นที่ 1 (2569)" />
+          </div>
+          <div>
+            <label for="packJobIdInput">รหัสใบงานที่สร้าง</label>
+            <input id="packJobIdInput" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ เช่น PACK-20261119-01" />
+          </div>
+          <div>
+            <label for="filterDmTab2">กรองตาม DM</label>
+            <select id="filterDmTab2">
+              <option value="ALL">ทุก DM</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-sec" id="btnSelectVisible">เลือกทั้งหมดที่แสดง</button>
+          <button type="button" class="btn-sec" id="btnUnselectAll">ยกเลิกการเลือก</button>
+          <button type="button" class="btn-ok" id="btnCreatePackJob">สร้างแพ็กใบงานให้ผู้รับจ้างมารับ (<span id="selectedCount">0</span> จุด)</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px;">เลือก</th>
+                <th>#</th>
+                <th>DM</th>
+                <th>ชื่อสถานที่</th>
+                <th>พิกัด</th>
+                <th>สภาพปัญหา</th>
+                <th>สถานะจัดแพ็ก</th>
+                <th>ลบ</th>
+              </tr>
+            </thead>
+            <tbody id="tab2Body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== แท็บ 3: หน้ารับงานตามสัญญา (สำหรับผู้รับจ้าง) ==================== -->
+    <section id="tab3" class="tab-panel">
+      <div class="card">
+        <div class="alert-box alert-warn" id="clientCheckBanner"></div>
+
+        <div class="grid-3">
+          <div>
+            <label for="contractorContractSelect">เลือกชื่อสัญญาของบริษัท *</label>
+            <select id="contractorContractSelect">
+              <option value="">-- เลือกสัญญา --</option>
+            </select>
+          </div>
+          <div>
+            <label for="detectedClientVersion">เวอร์ชันโปรแกรม Client หลักในเครื่องของผู้รับจ้าง</label>
+            <select id="detectedClientVersion">
+              <option value="v2.0" selected>v2.0 (เวอร์ชันล่าสุด)</option>
+              <option value="v1.9">v1.9 (เวอร์ชันเก่า - ไม่อนุญาตให้รับงาน)</option>
+              <option value="v1.0">v1.0 (เวอร์ชันเก่ามาก - ไม่อนุญาตให้รับงาน)</option>
+            </select>
+          </div>
+          <div>
+            <label for="clientStatusFilter">แสดงผลใบงานตามสถานะ</label>
+            <select id="clientStatusFilter">
+              <option value="ALL">ทุกสถานะ</option>
+              <option value="READY_TO_TAKE">รอรับงาน</option>
+              <option value="DOWNLOADED">รับงานแล้ว (สร้างไฟล์ HTML แล้ว)</option>
+              <option value="COMPLETED_JSON">บันทึกผลแล้ว (แนบ .json แล้ว)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ฟังก์ชันที่ 1: รับโปรแกรม Client หลัก + นำเข้าใบงาน + แสดงผลตามสถานะ -->
+        <div class="actions">
+          <button type="button" class="btn-primary" id="btnDownloadMainClient">1) ดาวน์โหลดโปรแกรม Client หลัก (v2.0)</button>
+          <label class="btn-sec" style="margin:0;cursor:pointer;">
+            นำเข้าไฟล์ใบงาน (.json/.html)
+            <input type="file" id="importPackFileInput" accept=".json,.html" style="display:none;" />
+          </label>
+          <button type="button" class="btn-sec" id="btnAttachResultJson">แนบไฟล์ผลลัพธ์จากหน้าบันทึกงาน (.json)</button>
+          <input type="file" id="attachResultJsonInput" accept=".json,application/json" style="display:none;" />
+        </div>
+      </div>
+
+      <div id="tab3PackList"></div>
+    </section>
   </div>
 
   <script>
-    const SAMPLE_5_SITES = [
-      { cabinetId: 'CAB-DMA01-001', meterId: 'MTR-2026-101', workType: 'PM', note: 'จุดที่ 1 - บริเวณปากซอยหลัก' },
-      { cabinetId: 'CAB-DMA01-002', meterId: 'MTR-2026-102', workType: 'PM', note: 'จุดที่ 2 - ข้างสถานีสูบย่อย' },
-      { cabinetId: 'CAB-DMA01-003', meterId: 'MTR-2026-103', workType: 'CM', note: 'จุดที่ 3 - ตรวจเช็กสัญญาณ/ค่าอ่าน' },
-      { cabinetId: 'CAB-DMA01-004', meterId: 'MTR-2026-104', workType: 'PM', note: 'จุดที่ 4 - แยกถนนสายรอง' },
-      { cabinetId: 'CAB-DMA01-005', meterId: 'MTR-2026-105', workType: 'CAL_REP', note: 'จุดที่ 5 - จุดปลายโซน DMA' }
-    ];
+    // กำหนดเวอร์ชัน Client หลักล่าสุดที่บังคับใช้ (หากไม่ตรง จะไม่ให้รับงาน)
+    const LATEST_CLIENT_VERSION = 'v2.0';
+    const STORAGE_POINTS_KEY = 'jc_points_v1';
+    const STORAGE_PACKS_KEY = 'jc_packs_v1';
 
-    let sites = SAMPLE_5_SITES.map((x) => ({ ...x }));
+    document.getElementById('latestClientBadge').textContent = 'Client ล่าสุด: ' + LATEST_CLIENT_VERSION;
+
+    function loadPoints() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_POINTS_KEY) || '[]'); } catch { return []; }
+    }
+    function savePoints(v) {
+      localStorage.setItem(STORAGE_POINTS_KEY, JSON.stringify(v));
+    }
+    function loadPacks() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_PACKS_KEY) || '[]'); } catch { return []; }
+    }
+    function savePacks(v) {
+      localStorage.setItem(STORAGE_PACKS_KEY, JSON.stringify(v));
+    }
 
     function escapeHtml(s) {
       return String(s ?? '').replace(/[&<>"']/g, (m) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[m]));
     }
-
     function safeSlug(s) {
       return String(s || 'JOB').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
     }
 
-    function renderSites() {
-      document.getElementById('siteCount').textContent = sites.length;
-      const tbody = document.getElementById('siteTableBody');
-      if (!sites.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b;">ยังไม่มีจุดงานในใบงานนี้</td></tr>';
-        return;
+    // สร้างข้อมูลตัวอย่าง 30 จุดงานรอตรวจสอบ
+    function generate30SamplePoints() {
+      const dms = ['DM-01', 'DM-02', 'DM-03', 'DM-04', 'DM-05'];
+      const places = [
+        'หน้าโรงกรองน้ำสามเสน', 'ซอยงามวงศ์วาน 25', 'แยกแคราย', 'ถนนติวานนท์',
+        'ปากซอยสามัคคี', 'หน้าตลาดพงษ์เพชร', 'แยกประชานุกูล', 'ถนนประชาชื่น'
+      ];
+      const issues = [
+        'เครื่องวัดไม่ส่งข้อมูลระยะไกล',
+        'ค่าอัตราการไหลผิดปกติเทียบกับรอบก่อน',
+        'ฝาตู้ภาคสนามปิดไม่สนิท / มีน้ำซึม',
+        'แบตเตอรี่หรือแหล่งจ่ายไฟในตู้ตก',
+        'ต้องสอบเทียบเครื่องวัดตามรอบ'
+      ];
+      const list = [];
+      for (let i = 1; i <= 30; i++) {
+        const dm = dms[(i - 1) % dms.length];
+        const place = `${places[(i - 1) % places.length]} จุดที่ ${i}`;
+        const lat = (13.82 + (i * 0.0021)).toFixed(6);
+        const lng = (100.51 + (i * 0.0018)).toFixed(6);
+        const issue = issues[(i - 1) % issues.length];
+        list.push({
+          id: 'PT-' + String(i).padStart(3, '0') + '-' + (1000 + i),
+          dm,
+          place,
+          coord: `${lat}, ${lng}`,
+          issue,
+          packStatus: 'WAITING', // WAITING | PACKED
+          packId: null,
+          selected: false
+        });
       }
-      tbody.innerHTML = sites.map((s, idx) => `
-        <tr>
-          <td>${idx + 1}</td>
-          <td>${escapeHtml(s.cabinetId)}</td>
-          <td>${escapeHtml(s.meterId)}</td>
-          <td>${escapeHtml(s.workType)}</td>
-          <td>${escapeHtml(s.note)}</td>
-          <td><button type="button" class="btn-del" onclick="removeSite(${idx})">ลบ</button></td>
-        </tr>
-      `).join('');
+      return list;
     }
 
-    window.removeSite = (idx) => {
-      sites.splice(idx, 1);
-      renderSites();
+    // สลับแท็บ 1 - 3
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        renderAll();
+      });
+    });
+
+    // ---------------- แท็บ 1: นำเข้าจุดงาน ----------------
+    document.getElementById('singlePointForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pts = loadPoints();
+      pts.unshift({
+        id: 'PT-' + Date.now() + '-' + Math.floor(Math.random() * 100),
+        dm: document.getElementById('inpDm').value.trim(),
+        place: document.getElementById('inpPlace').value.trim(),
+        coord: document.getElementById('inpCoord').value.trim(),
+        issue: document.getElementById('inpIssue').value.trim(),
+        packStatus: 'WAITING',
+        packId: null,
+        selected: false
+      });
+      savePoints(pts);
+      e.target.reset();
+      renderAll();
+      alert('เพิ่มจุดงานรอตรวจสอบเรียบร้อยแล้ว');
+    });
+
+    document.getElementById('btnGen30').addEventListener('click', () => {
+      savePoints(generate30SamplePoints());
+      renderAll();
+      alert('โหลดข้อมูลตัวอย่าง 30 จุดงานเรียบร้อยแล้ว (ไปดูที่แท็บ 2 เพื่อจัดแพ็กใบงาน)');
+    });
+
+    document.getElementById('btnClearAllPoints').addEventListener('click', () => {
+      if (!confirm('ต้องการล้างรายการจุดงานรอตรวจสอบทั้งหมดใช่หรือไม่?')) return;
+      savePoints([]);
+      renderAll();
+    });
+
+    function parseCsvLines(text) {
+      const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const added = [];
+      for (const line of lines) {
+        const cols = line.split(',').map((c) => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 4) continue;
+        if (cols[0].toLowerCase() === 'dm' && cols[1].toLowerCase() === 'place') continue;
+        const dm = cols[0];
+        const place = cols[1];
+        const issue = cols[cols.length - 1];
+        const coord = cols.slice(2, cols.length - 1).join(', ');
+        added.push({
+          id: 'PT-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          dm,
+          place,
+          coord,
+          issue,
+          packStatus: 'WAITING',
+          packId: null,
+          selected: false
+        });
+      }
+      return added;
+    }
+
+    document.getElementById('btnImportCsvText').addEventListener('click', () => {
+      const added = parseCsvLines(document.getElementById('csvImportBox').value);
+      if (!added.length) return alert('ไม่พบข้อมูล CSV ที่ถูกต้อง (ต้องมีอย่างน้อย 4 คอลัมน์: DM, ชื่อสถานที่, พิกัด, สภาพปัญหา)');
+      const pts = loadPoints();
+      savePoints([...added, ...pts]);
+      document.getElementById('csvImportBox').value = '';
+      renderAll();
+      alert(`นำเข้าจุดงานสำเร็จ ${added.length} จุด`);
+    });
+
+    document.getElementById('csvFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const added = parseCsvLines(String(reader.result));
+        if (!added.length) return alert('ไม่พบข้อมูลในไฟล์ CSV');
+        savePoints([...added, ...loadPoints()]);
+        renderAll();
+        alert(`นำเข้าจากไฟล์สำเร็จ ${added.length} จุด`);
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // ---------------- แท็บ 2: จัดแพ็กจุดงาน & ระบุสัญญา ----------------
+    function getFilteredTab2Points() {
+      const dmFilter = document.getElementById('filterDmTab2').value;
+      const pts = loadPoints();
+      return dmFilter === 'ALL' ? pts : pts.filter((p) => p.dm === dmFilter);
+    }
+
+    document.getElementById('filterDmTab2').addEventListener('change', renderTab2);
+
+    window.toggleSelectPoint = (id, checked) => {
+      const pts = loadPoints();
+      const idx = pts.findIndex((p) => p.id === id);
+      if (idx !== -1) {
+        pts[idx].selected = checked;
+        savePoints(pts);
+        updateSelectedCount();
+      }
     };
 
-    document.getElementById('btnAddSite').addEventListener('click', () => {
-      const cabinetId = document.getElementById('newCabinet').value.trim();
-      const meterId = document.getElementById('newMeter').value.trim();
-      const workType = document.getElementById('newWorkType').value;
-      const note = document.getElementById('newNote').value.trim();
-      if (!cabinetId || !meterId) return alert('กรุณากรอกรหัสตู้ภาคสนามและรหัสเครื่องวัด');
-      sites.push({ cabinetId, meterId, workType, note });
-      document.getElementById('newCabinet').value = '';
-      document.getElementById('newMeter').value = '';
-      document.getElementById('newNote').value = '';
-      renderSites();
+    window.deletePoint = (id) => {
+      savePoints(loadPoints().filter((p) => p.id !== id));
+      renderAll();
+    };
+
+    document.getElementById('btnSelectVisible').addEventListener('click', () => {
+      const visibleIds = new Set(getFilteredTab2Points().map((p) => p.id));
+      const pts = loadPoints().map((p) => (visibleIds.has(p.id) && p.packStatus === 'WAITING' ? { ...p, selected: true } : p));
+      savePoints(pts);
+      renderTab2();
     });
 
-    document.getElementById('btnReset5Sample').addEventListener('click', () => {
-      sites = SAMPLE_5_SITES.map((x) => ({ ...x }));
-      renderSites();
+    document.getElementById('btnUnselectAll').addEventListener('click', () => {
+      savePoints(loadPoints().map((p) => ({ ...p, selected: false })));
+      renderTab2();
     });
 
-    // สร้างไฟล์ HTML ของใบงานที่ฝังข้อมูลใบงาน + จุดงานทั้งหมดไว้ในตัว
-    function generateJobWorkerHtml(jobData) {
-      const embeddedJson = JSON.stringify(jobData).replace(/</g, '\\u003c');
+    function updateSelectedCount() {
+      const cnt = loadPoints().filter((p) => p.selected && p.packStatus === 'WAITING').length;
+      document.getElementById('selectedCount').textContent = cnt;
+    }
 
+    document.getElementById('btnCreatePackJob').addEventListener('click', () => {
+      const contractName = document.getElementById('contractNameInput').value.trim();
+      if (!contractName) return alert('กรุณาระบุ "ชื่อสัญญาเข้าตรวจสอบ" ก่อนสร้างใบงาน');
+
+      const pts = loadPoints();
+      const chosen = pts.filter((p) => p.selected && p.packStatus === 'WAITING');
+      if (!chosen.length) return alert('กรุณาเลือกจุดงานที่รอจัดแพ็กอย่างน้อย 1 จุด');
+
+      const customJobId = document.getElementById('packJobIdInput').value.trim();
+      const packs = loadPacks();
+      const jobId = customJobId || ('PACK-' + String(packs.length + 1).padStart(3, '0'));
+
+      const newPack = {
+        jobId,
+        contractName,
+        requiredClientVersion: LATEST_CLIENT_VERSION,
+        createdAt: new Date().toISOString(),
+        status: 'READY_TO_TAKE', // READY_TO_TAKE | DOWNLOADED | COMPLETED_JSON
+        points: chosen.map((c) => ({
+          id: c.id,
+          dm: c.dm,
+          place: c.place,
+          coord: c.coord,
+          issue: c.issue
+        })),
+        resultJson: null
+      };
+
+      const chosenIds = new Set(chosen.map((c) => c.id));
+      const updatedPts = pts.map((p) => (chosenIds.has(p.id) ? { ...p, packStatus: 'PACKED', packId: jobId, selected: false } : p));
+      savePoints(updatedPts);
+
+      packs.unshift(newPack);
+      savePacks(packs);
+      document.getElementById('packJobIdInput').value = '';
+
+      renderAll();
+      alert(`สร้างใบงาน "${jobId}" ภายใต้สัญญา "${contractName}" จำนวน ${chosen.length} จุดแล้ว (ไปที่แท็บ 3 เพื่อให้ผู้รับจ้างมารับงาน)`);
+    });
+
+    function renderTab2() {
+      const allPts = loadPoints();
+      const dmSelect = document.getElementById('filterDmTab2');
+      const curDm = dmSelect.value;
+      const dms = Array.from(new Set(allPts.map((p) => p.dm))).sort();
+      dmSelect.innerHTML = '<option value="ALL">ทุก DM</option>' + dms.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+      if (dms.includes(curDm)) dmSelect.value = curDm;
+
+      const rows = getFilteredTab2Points();
+      const tbody = document.getElementById('tab2Body');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#64748b;">ไม่มีจุดงานในรายการ (กดปุ่มที่แท็บ 1 เพื่อโหลดตัวอย่าง 30 จุดหรือเพิ่มข้อมูล)</td></tr>';
+        updateSelectedCount();
+        return;
+      }
+
+      tbody.innerHTML = rows.map((p, idx) => {
+        const isPacked = p.packStatus === 'PACKED';
+        const badge = isPacked
+          ? `<span class="badge b-packed">จัดแพ็กแล้ว (${escapeHtml(p.packId)})</span>`
+          : `<span class="badge b-wait">รอจัดแพ็ก</span>`;
+        return `
+          <tr>
+            <td style="text-align:center;">
+              <input type="checkbox" ${p.selected ? 'checked' : ''} ${isPacked ? 'disabled' : ''} onchange="toggleSelectPoint('${p.id}', this.checked)" />
+            </td>
+            <td>${idx + 1}</td>
+            <td><strong>${escapeHtml(p.dm)}</strong></td>
+            <td>${escapeHtml(p.place)}</td>
+            <td>${escapeHtml(p.coord)}</td>
+            <td>${escapeHtml(p.issue)}</td>
+            <td>${badge}</td>
+            <td><button type="button" class="btn-del" onclick="deletePoint('${p.id}')">ลบ</button></td>
+          </tr>
+        `;
+      }).join('');
+      updateSelectedCount();
+    }
+
+    // ---------------- แท็บ 3: หน้ารับงานตามสัญญา ----------------
+    function isClientUpToDate() {
+      const selectedVer = document.getElementById('detectedClientVersion').value;
+      return selectedVer === LATEST_CLIENT_VERSION;
+    }
+
+    function renderClientCheckBanner() {
+      const banner = document.getElementById('clientCheckBanner');
+      const ver = document.getElementById('detectedClientVersion').value;
+      if (ver === LATEST_CLIENT_VERSION) {
+        banner.className = 'alert-box alert-info';
+        banner.innerHTML = `<strong>ตรวจสอบเวอร์ชัน Client ผ่าน:</strong> ปัจจุบันใช้เวอร์ชัน <strong>${escapeHtml(ver)}</strong> ซึ่งเป็นเวอร์ชันล่าสุด สามารถรับงานตามสัญญาและสร้างไฟล์ใบงาน (.html) ได้ตามปกติ`;
+      } else {
+        banner.className = 'alert-box alert-err';
+        banner.innerHTML = `<strong>ไม่อนุญาตให้รับงาน:</strong> เวอร์ชันโปรแกรม Client ของผู้รับจ้าง (<strong>${escapeHtml(ver)}</strong>) ไม่ใช่เวอร์ชันล่าสุด (<strong>${LATEST_CLIENT_VERSION}</strong>) กรุณาเปลี่ยนเป็นเวอร์ชัน <strong>${LATEST_CLIENT_VERSION}</strong> หรือกดปุ่มดาวน์โหลดโปรแกรม Client หลักก่อนรับงาน`;
+      }
+    }
+
+    document.getElementById('detectedClientVersion').addEventListener('change', () => {
+      renderClientCheckBanner();
+      renderTab3();
+    });
+
+    // ฟังก์ชันสร้างไฟล์ใบงาน HTML ตามโครงสร้างเดิม (เลือกจุดงาน ถ่ายรูป บันทึกผล เก็บพิกัด เซฟเป็น .json)
+    function buildWorkerJobHtml(pack) {
+      const embedded = JSON.stringify(pack).replace(/</g, '\\u003c');
       return `<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ใบงาน: ${escapeHtml(jobData.jobId)}</title>
+  <title>ใบงาน: ${escapeHtml(pack.jobId)}</title>
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 12px; }
@@ -213,7 +596,7 @@
     label { display: block; font-size: 0.85rem; font-weight: 600; margin: 10px 0 4px; }
     input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background: #fff; }
     textarea { min-height: 76px; }
-    .site-note { font-size: 0.82rem; color: #475569; background: #f8fafc; padding: 8px 10px; border-radius: 8px; margin-top: 6px; border: 1px solid #e2e8f0; }
+    .info-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 0.84rem; margin-top: 6px; }
     .gps { background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 8px; padding: 8px 10px; font-size: 0.84rem; margin-top: 6px; }
     .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     button { border: none; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
@@ -224,174 +607,157 @@
 </head>
 <body>
   <div class="box">
-    <h1 id="hdrTitle">ใบงานภาคสนาม</h1>
-    <div class="sub" id="hdrMeta"></div>
+    <h1 id="wTitle">บันทึกผลการปฏิบัติงาน</h1>
+    <div class="sub" id="wSub"></div>
 
-    <form id="workerForm">
+    <form id="wForm">
       <label>เลือกจุดงานในใบงานนี้ *</label>
-      <select id="sitePicker" required></select>
-      <div class="site-note" id="siteDetailBox">-</div>
+      <select id="wSite" required></select>
+      <div class="info-box" id="wSiteInfo">-</div>
 
       <label>ถ่ายรูปจุดงาน (หรือเลือกรูปที่มีในเครื่อง) *</label>
-      <input id="camInput" type="file" accept="image/*" capture="environment" style="display:none;" />
-      <input id="galInput" type="file" accept="image/*" style="display:none;" />
+      <input id="wCam" type="file" accept="image/*" capture="environment" style="display:none;" />
+      <input id="wGal" type="file" accept="image/*" style="display:none;" />
       <div class="row">
-        <button type="button" class="btn-sec" onclick="document.getElementById('camInput').click()">ถ่ายรูป</button>
-        <button type="button" class="btn-sec" onclick="document.getElementById('galInput').click()">เลือกรูป</button>
+        <button type="button" class="btn-sec" onclick="document.getElementById('wCam').click()">ถ่ายรูป</button>
+        <button type="button" class="btn-sec" onclick="document.getElementById('wGal').click()">เลือกรูป</button>
       </div>
-      <div id="photoStatus" style="font-size:0.8rem;color:#64748b;margin-top:4px;">ยังไม่ได้เลือกรูปภาพ</div>
-      <img id="photoPreview" class="prev" alt="ตัวอย่างรูปภาพจุดงาน" />
+      <div id="wPhotoTxt" style="font-size:0.8rem;color:#64748b;margin-top:4px;">ยังไม่ได้เลือกรูปภาพ</div>
+      <img id="wPrev" class="prev" alt="ตัวอย่างรูป" />
 
       <label>บันทึกผลการปฏิบัติงาน *</label>
-      <textarea id="resultText" required placeholder="ระบุผลการตรวจเช็ก อาการ หรือสิ่งที่ดำเนินการ"></textarea>
+      <textarea id="wResult" required placeholder="ระบุผลการตรวจเช็ก การแก้ไข หรือสภาพเครื่องวัด"></textarea>
 
       <label>พิกัดทำงาน</label>
-      <div class="gps" id="gpsInfo">กำลังดึงพิกัด GPS...</div>
+      <div class="gps" id="wGps">กำลังดึงพิกัด GPS...</div>
       <div class="row">
-        <button type="button" class="btn-sec" id="btnRefreshGps">รีเฟรชพิกัด</button>
+        <button type="button" class="btn-sec" id="btnWGps">รีเฟรชพิกัด</button>
       </div>
 
       <div class="row" style="margin-top:14px;">
-        <button type="submit" class="btn-main">บันทึกจุดงานและเซฟเป็นไฟล์ .json</button>
+        <button type="submit" class="btn-main">บันทึกและเซฟเป็นไฟล์ .json</button>
       </div>
     </form>
   </div>
 
   <script>
-    const JOB_DATA = ${embeddedJson};
-    document.getElementById('hdrTitle').textContent = JOB_DATA.jobId + ' — ' + JOB_DATA.title;
-    document.getElementById('hdrMeta').textContent = 'รหัสใบงาน: ' + JOB_DATA.jobId + ' | เวอร์ชัน: ' + JOB_DATA.templateVersion + ' | จำนวนจุดงาน: ' + (JOB_DATA.sites || []).length + ' จุด';
+    const PACK = ${embedded};
+    document.getElementById('wTitle').textContent = PACK.jobId + ' — ' + PACK.contractName;
+    document.getElementById('wSub').textContent = 'Client Version: ' + PACK.requiredClientVersion + ' | จำนวนจุดงาน: ' + (PACK.points || []).length + ' จุด';
 
-    const picker = document.getElementById('sitePicker');
-    const detailBox = document.getElementById('siteDetailBox');
-
-    (JOB_DATA.sites || []).forEach((s, i) => {
+    const sel = document.getElementById('wSite');
+    const info = document.getElementById('wSiteInfo');
+    (PACK.points || []).forEach((pt, i) => {
       const op = document.createElement('option');
       op.value = String(i);
-      op.textContent = \`จุดที่ \${i + 1}: \${s.cabinetId} / \${s.meterId} (\${s.workType})\`;
-      picker.appendChild(op);
+      op.textContent = \`จุดที่ \${i + 1}: [\${pt.dm}] \${pt.place}\`;
+      sel.appendChild(op);
     });
 
-    function updateSiteDetail() {
-      const s = (JOB_DATA.sites || [])[Number(picker.value)];
-      if (!s) return;
-      detailBox.textContent = \`ตู้: \${s.cabinetId} | เครื่องวัด: \${s.meterId} | ประเภทงาน: \${s.workType}\${s.note ? ' | ' + s.note : ''}\`;
+    function showPt() {
+      const pt = (PACK.points || [])[Number(sel.value)];
+      if (!pt) return;
+      info.innerHTML = \`<strong>DM:</strong> \${pt.dm} | <strong>สถานที่:</strong> \${pt.place}<br><strong>พิกัดอ้างอิง:</strong> \${pt.coord} | <strong>สภาพปัญหา:</strong> \${pt.issue}\`;
     }
-    picker.addEventListener('change', updateSiteDetail);
-    updateSiteDetail();
+    sel.addEventListener('change', showPt);
+    showPt();
 
-    let currentGps = null;
-    let photoBase64 = '';
-    let photoSource = '';
+    let gps = null;
+    let photoData = '';
+    let photoSrc = '';
 
-    function fetchGps() {
-      const el = document.getElementById('gpsInfo');
+    function getGps() {
+      const el = document.getElementById('wGps');
       if (!navigator.geolocation) { el.textContent = 'อุปกรณ์ไม่รองรับ GPS'; return; }
       el.textContent = 'กำลังดึงพิกัด...';
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          currentGps = {
-            lat: Number(pos.coords.latitude.toFixed(6)),
-            lng: Number(pos.coords.longitude.toFixed(6)),
-            accuracyM: Math.round(pos.coords.accuracy),
-            capturedAt: new Date().toISOString()
-          };
-          el.textContent = \`Lat: \${currentGps.lat}, Lng: \${currentGps.lng} (±\${currentGps.accuracyM} m)\`;
+        (p) => {
+          gps = { lat: Number(p.coords.latitude.toFixed(6)), lng: Number(p.coords.longitude.toFixed(6)), accuracyM: Math.round(p.coords.accuracy), capturedAt: new Date().toISOString() };
+          el.textContent = \`Lat: \${gps.lat}, Lng: \${gps.lng} (±\${gps.accuracyM} m)\`;
         },
-        (err) => { el.textContent = 'ดึงพิกัดไม่ได้: ' + err.message; },
+        (e) => { el.textContent = 'ดึงพิกัดไม่ได้: ' + e.message; },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
-    document.getElementById('btnRefreshGps').addEventListener('click', fetchGps);
+    document.getElementById('btnWGps').addEventListener('click', getGps);
 
-    function fileToCompressedBase64(file, maxW = 1200, q = 0.78) {
-      return new Promise((resolve, reject) => {
+    function toJpegBase64(file, maxW = 1200, q = 0.78) {
+      return new Promise((res, rej) => {
         const img = new Image();
-        const url = URL.createObjectURL(file);
+        const u = URL.createObjectURL(file);
         img.onload = () => {
-          URL.revokeObjectURL(url);
+          URL.revokeObjectURL(u);
           let { width, height } = img;
           if (width > maxW) { height = Math.round((height * maxW) / width); width = maxW; }
-          const canvas = document.createElement('canvas');
-          canvas.width = width; canvas.height = height;
-          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', q));
+          const c = document.createElement('canvas');
+          c.width = width; c.height = height;
+          c.getContext('2d').drawImage(img, 0, 0, width, height);
+          res(c.toDataURL('image/jpeg', q));
         };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('อ่านรูปไม่ได้')); };
-        img.src = url;
+        img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('อ่านรูปไม่ได้')); };
+        img.src = u;
       });
     }
 
-    async function handlePhoto(file, src) {
+    async function pickImg(file, src) {
       if (!file) return;
-      photoBase64 = await fileToCompressedBase64(file);
-      photoSource = src;
-      const img = document.getElementById('photoPreview');
-      img.src = photoBase64;
-      img.style.display = 'block';
-      document.getElementById('photoStatus').textContent = 'แนบรูปแล้ว (' + src + ')';
+      photoData = await toJpegBase64(file);
+      photoSrc = src;
+      const prev = document.getElementById('wPrev');
+      prev.src = photoData;
+      prev.style.display = 'block';
+      document.getElementById('wPhotoTxt').textContent = 'แนบรูปแล้ว (' + src + ')';
     }
 
-    document.getElementById('camInput').addEventListener('change', (e) => handlePhoto(e.target.files[0], 'CAMERA'));
-    document.getElementById('galInput').addEventListener('change', (e) => handlePhoto(e.target.files[0], 'GALLERY'));
+    document.getElementById('wCam').addEventListener('change', (e) => pickImg(e.target.files[0], 'CAMERA'));
+    document.getElementById('wGal').addEventListener('change', (e) => pickImg(e.target.files[0], 'GALLERY'));
 
-    document.getElementById('workerForm').addEventListener('submit', (e) => {
+    document.getElementById('wForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      if (!photoBase64) return alert('กรุณาถ่ายรูปหรือเลือกรูปภาพก่อนบันทึก');
-
-      const site = (JOB_DATA.sites || [])[Number(picker.value)] || {};
+      if (!photoData) return alert('กรุณาถ่ายรูปหรือเลือกรูปภาพก่อนบันทึก');
+      const pt = (PACK.points || [])[Number(sel.value)] || {};
       const now = new Date();
-      const output = {
-        jobId: JOB_DATA.jobId,
-        jobTitle: JOB_DATA.title,
-        templateVersion: JOB_DATA.templateVersion,
-        site,
-        result: document.getElementById('resultText').value.trim(),
-        gps: currentGps,
-        photoSource,
-        photoDataUrl: photoBase64,
+      const out = {
+        jobId: PACK.jobId,
+        contractName: PACK.contractName,
+        clientVersion: PACK.requiredClientVersion,
+        point: pt,
+        result: document.getElementById('wResult').value.trim(),
+        gps,
+        photoSrc,
+        photoDataUrl: photoData,
         savedAt: now.toISOString()
       };
-
-      const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
-      const safeJob = String(JOB_DATA.jobId || 'JOB').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const safeCab = String(site.cabinetId || 'SITE').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const fileName = \`\${safeJob}_\${safeCab}_\${now.getTime()}.json\`;
-
+      const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      const fileName = \`\${PACK.jobId}_\${pt.id || 'PT'}_\${now.getTime()}.json\`;
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
-
-      alert('บันทึกและดาวน์โหลดไฟล์ ' + fileName + ' ลงเครื่องแล้ว');
+      alert('บันทึกและเซฟไฟล์ ' + fileName + ' ลงเครื่องแล้ว');
     });
 
-    fetchGps();
+    getGps();
   <\/script>
 </body>
 </html>`;
     }
 
-    document.getElementById('btnCreateJobHtml').addEventListener('click', () => {
-      const jobId = document.getElementById('jobId').value.trim();
-      const title = document.getElementById('jobTitle').value.trim();
-      const templateVersion = document.getElementById('templateVersion').value.trim() || 'v1.0';
-      if (!jobId || !title) return alert('กรุณากรอกรหัสใบงานและชื่องาน');
-      if (!sites.length) return alert('ต้องมีจุดงานอย่างน้อย 1 จุดในใบงาน');
+    // ฟังก์ชันรับงาน: ตรวจสอบเวอร์ชัน Client ก่อน แล้วสร้างไฟล์ .html ใบงานให้ดาวน์โหลด
+    window.takeJobAndDownloadHtml = (jobId) => {
+      if (!isClientUpToDate()) {
+        return alert(`ไม่สามารถรับงานได้ เนื่องจากโปรแกรม Client ไม่ใช่เวอร์ชันล่าสุด (${LATEST_CLIENT_VERSION})`);
+      }
+      const packs = loadPacks();
+      const idx = packs.findIndex((p) => p.jobId === jobId);
+      if (idx === -1) return;
 
-      const jobData = {
-        jobId,
-        title,
-        templateVersion,
-        createdAt: new Date().toISOString(),
-        sites
-      };
-
-      const htmlStr = generateJobWorkerHtml(jobData);
+      const pack = packs[idx];
+      const htmlStr = buildWorkerJobHtml(pack);
       const blob = new Blob([htmlStr], { type: 'text/html;charset=utf-8;' });
-      const fileName = `${safeSlug(jobId)}.html`;
+      const fileName = `${safeSlug(pack.jobId)}.html`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -400,9 +766,180 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      if (packs[idx].status === 'READY_TO_TAKE') {
+        packs[idx].status = 'DOWNLOADED';
+      }
+      packs[idx].downloadedAt = new Date().toISOString();
+      savePacks(packs);
+      renderTab3();
+    };
+
+    // ฟังก์ชันเปิดหน้าบันทึกงานของใบงานนั้นขึ้นมาใช้งานทันที (สำหรับผู้รับจ้าง)
+    window.openWorkerPageNow = (jobId) => {
+      if (!isClientUpToDate()) {
+        return alert(`กรุณาอัปเดตโปรแกรม Client เป็นเวอร์ชันล่าสุด (${LATEST_CLIENT_VERSION}) ก่อนใช้งาน`);
+      }
+      const pack = loadPacks().find((p) => p.jobId === jobId);
+      if (!pack) return;
+      const blob = new Blob([buildWorkerJobHtml(pack)], { type: 'text/html;charset=utf-8;' });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    };
+
+    // ดาวน์โหลดไฟล์โปรแกรม Client หลักเวอร์ชันล่าสุด
+    document.getElementById('btnDownloadMainClient').addEventListener('click', () => {
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `job_creator_${LATEST_CLIENT_VERSION}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      document.getElementById('detectedClientVersion').value = LATEST_CLIENT_VERSION;
+      renderClientCheckBanner();
+      renderTab3();
     });
 
-    renderSites();
+    // นำเข้าไฟล์ใบงาน (.json)
+    document.getElementById('importPackFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result));
+          if (!data.jobId || !data.contractName) return alert('รูปแบบไฟล์ใบงานไม่ถูกต้อง');
+          const packs = loadPacks();
+          const exists = packs.some((p) => p.jobId === data.jobId);
+          if (!exists) {
+            packs.unshift({
+              jobId: data.jobId,
+              contractName: data.contractName,
+              requiredClientVersion: data.requiredClientVersion || LATEST_CLIENT_VERSION,
+              createdAt: data.createdAt || new Date().toISOString(),
+              status: data.status || 'READY_TO_TAKE',
+              points: data.points || [],
+              resultJson: data.resultJson || null
+            });
+            savePacks(packs);
+            renderAll();
+            alert('นำเข้าใบงาน ' + data.jobId + ' เรียบร้อยแล้ว');
+          } else {
+            alert('มีใบงานรหัส ' + data.jobId + ' อยู่ในรายการแล้ว');
+          }
+        } catch {
+          alert('ไม่สามารถอ่านไฟล์ที่นำเข้าได้');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // แนบไฟล์ผลลัพธ์ .json ที่บันทึกจากหน้าบันทึกงานกลับเข้ามาผูกกับใบงาน
+    let attachTargetJobId = null;
+    document.getElementById('btnAttachResultJson').addEventListener('click', () => {
+      const contract = document.getElementById('contractorContractSelect').value;
+      const candidates = loadPacks().filter((p) => !contract || p.contractName === contract);
+      if (!candidates.length) return alert('ไม่พบใบงานสำหรับแนบไฟล์ผลลัพธ์');
+      attachTargetJobId = candidates[0].jobId;
+      document.getElementById('attachResultJsonInput').click();
+    });
+
+    document.getElementById('attachResultJsonInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result));
+          const targetId = parsed.jobId || attachTargetJobId;
+          const packs = loadPacks();
+          const idx = packs.findIndex((p) => p.jobId === targetId);
+          if (idx === -1) return alert('ไม่พบรหัสใบงานที่ตรงกับไฟล์ผลลัพธ์');
+          packs[idx].resultJson = parsed;
+          packs[idx].status = 'COMPLETED_JSON';
+          savePacks(packs);
+          renderTab3();
+          alert(`แนบไฟล์ผลลัพธ์เข้ากับใบงาน ${targetId} แล้ว`);
+        } catch {
+          alert('ไฟล์ผลลัพธ์ .json ไม่ถูกต้อง');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('contractorContractSelect').addEventListener('change', renderTab3);
+    document.getElementById('clientStatusFilter').addEventListener('change', renderTab3);
+
+    function packStatusBadge(st) {
+      if (st === 'COMPLETED_JSON') return '<span class="badge b-ok">บันทึกผลแล้ว (แนบ .json แล้ว)</span>';
+      if (st === 'DOWNLOADED') return '<span class="badge b-packed">รับงานแล้ว (โหลด .html แล้ว)</span>';
+      return '<span class="badge b-wait">รอรับงาน</span>';
+    }
+
+    function renderTab3() {
+      const packs = loadPacks();
+      const contractSel = document.getElementById('contractorContractSelect');
+      const curContract = contractSel.value;
+      const contracts = Array.from(new Set(packs.map((p) => p.contractName))).sort();
+      contractSel.innerHTML = '<option value="">-- ทุกสัญญา --</option>' + contracts.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      if (contracts.includes(curContract)) contractSel.value = curContract;
+
+      const stFilter = document.getElementById('clientStatusFilter').value;
+      const canTake = isClientUpToDate();
+
+      const filtered = packs.filter((p) => {
+        const matchContract = !contractSel.value || p.contractName === contractSel.value;
+        const matchStatus = stFilter === 'ALL' || p.status === stFilter;
+        return matchContract && matchStatus;
+      });
+
+      const listEl = document.getElementById('tab3PackList');
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="card"><div class="meta">ยังไม่มีใบงานตามเงื่อนไขที่เลือก (สร้างได้ที่แท็บ 2)</div></div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((p) => {
+        const ptSummary = (p.points || []).map((pt) => `[${pt.dm}] ${pt.place}`).join(', ');
+        return `
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong>${escapeHtml(p.jobId)} — สัญญา: ${escapeHtml(p.contractName)}</strong>
+              ${packStatusBadge(p.status)}
+            </div>
+            <div class="meta" style="margin-top:4px;">จำนวนจุดงาน: ${(p.points || []).length} จุด | เวอร์ชัน Client ที่กำหนด: ${escapeHtml(p.requiredClientVersion)}</div>
+            <div class="meta">จุดงาน: ${escapeHtml(ptSummary || '-')}</div>
+            <div class="actions">
+              <button type="button" class="btn-ok" ${!canTake ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} onclick="takeJobAndDownloadHtml('${escapeHtml(p.jobId)}')">รับงานและดาวน์โหลดไฟล์ .html</button>
+              <button type="button" class="btn-primary" ${!canTake ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} onclick="openWorkerPageNow('${escapeHtml(p.jobId)}')">เปิดใบงานเพื่อบันทึกผล</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderAll() {
+      const pts = loadPoints();
+      const packs = loadPacks();
+      document.getElementById('tab2Count').textContent = pts.filter((p) => p.packStatus === 'WAITING').length;
+      document.getElementById('tab3Count').textContent = packs.length;
+      renderTab2();
+      renderClientCheckBanner();
+      renderTab3();
+    }
+
+    // เริ่มต้นให้มีตัวอย่าง 30 จุดงานพร้อมทดสอบทันทีหากยังไม่เคยมีข้อมูล
+    if (!loadPoints().length) {
+      savePoints(generate30SamplePoints());
+    }
+    renderAll();
   </script>
 </body>
 </html>
